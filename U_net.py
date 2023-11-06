@@ -1,7 +1,6 @@
 import argparse
 import os
 from torch.backends import cudnn
-import random
 from data_loader import get_loader
 from solver import Solver
 
@@ -9,9 +8,9 @@ def main(config):
     cudnn.benchmark = True   # 启动GPU
 
 #     创建目录
-    if not os.path.exists(config.model_path):
+    if not os.path.exists(config.model_path):     # 保存model参数的地址
         os.makedirs(config.model_path)
-    if not os.path.exists(config.result_path):
+    if not os.path.exists(config.result_path):    # 保存test结果图片的地址
         os.makedirs(config.result_path)
 
     config.result_path = os.path.join(config.result_path, config.model_type)
@@ -19,32 +18,21 @@ def main(config):
     if not os.path.exists(config.result_path):
         os.makedirs(config.result_path)
 
-#     定义参数
-    lr = random.random()*0.0005+0.0000005   # 学习率
-    epoch = 300
-
-    augmentation_prob = random.random()*0.7
-    decay_ratio = random.random()*0.8
-    decay_epoch = int(epoch*decay_ratio)    # 通常用于控制学习率在训练深度学习模型时的调整策略。它表示在经过多少个训练周期（epochs）后，要减小学习率的值。
-
     print(config)
 
     train_loader = get_loader(image_path=config.train_path,
-                              image_size=config.image_size,
                               batch_size=config.batch_size,
                               num_workers=config.num_workers,
                               mode='train',
                               augmentation_prob=config.augmentation_prob)
 
     valid_loader = get_loader(image_path=config.valid_path,
-                              image_size=config.image_size,
                               batch_size=config.batch_size,
                               num_workers=config.num_workers,
                               mode='valid',
                               augmentation_prob=config.augmentation_prob)
 
     test_loader = get_loader(image_path=config.test_path,
-                              image_size=config.image_size,
                               batch_size=config.batch_size,
                               num_workers=config.num_workers,
                               mode='test',
@@ -59,16 +47,13 @@ def main(config):
         solver.test()
 
 
-
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-
-    parser.add_argument('--image_size', type=int, default=160)
 
     parser.add_argument('--image_channels', type=int, default=3)
     parser.add_argument('--output_channels', type=int, default=1)
     parser.add_argument('--num_epoch', type=int, default=300)
-    parser.add_argument('--num_epoch_decay', type=int, default=250)
+    parser.add_argument('--num_epoch_decay', type=int, default=250)  # 通常用于控制学习率在训练深度学习模型时的调整策略。它表示在经过多少个训练周期（epochs）后，要减小学习率的值。
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--lr', type=float, default=0.0002)
@@ -79,7 +64,7 @@ if __name__=='__main__':
     parser.add_argument('--log_step', type=int, default=2)
     parser.add_argument('--val_step',type=int, default=2)
 
-    parser.add_argument('--mode', type=str, default='train')
+    parser.add_argument('--mode', type=str, default='test')
     parser.add_argument('--model_path', type=str, default='D:\Repositories/U-Net/models')
     parser.add_argument('--model_type',type=str, default='U_net')
     parser.add_argument('--train_path', type=str, default='D:\Repositories/U-Net/train/')

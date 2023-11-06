@@ -16,21 +16,17 @@ __len__(self)：返回数据集的长度，即包含的图像数量。
 
 import os
 import random
-from random import shuffle
-import numpy as np
-import torch
 from torch.utils import data
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
 from PIL import Image
 
 class ImageFolder(data.Dataset):
-    def __init__(self, root, image_size=160, mode='train', augmentation_prob=0.4):    # 这是类的构造方法，用于初始化对象的属性和状态。
+    def __init__(self, root, mode='train', augmentation_prob=0.4):    # 这是类的构造方法，用于初始化对象的属性和状态。
         self.root = root                 # 训练集的待处理图像地址，如D:\Repositories/U-Net/train/
 
         self.GT_root = root[:-1] + '_GT/'     # 训练集的ground truth保存在D:\Repositories/U-Net/train_GT/
         self.img_path = list(map(lambda x: os.path.join(root, x), os.listdir(root)))   # 返回一个root下的所有子文件的列表，并将其和root进行连接，连接后img_path的每一个元素就是一张图片的地址
-        self.img_size = image_size
         self.mode = mode     # 这样写有什么优势？
         self.Rotation_Degree = [0, 90, 180, 270]    # 用来旋转图像，增加训练集数量
         self.augmentation_prob = augmentation_prob       # 用来一个参数，用来判断是否要进行训练集旋转等操作
@@ -94,7 +90,6 @@ class ImageFolder(data.Dataset):
 
             Transform = []
 
-        # Transform.append(T.Resize(((int(256*aspect_ratio)-int(256*aspect_ratio))%16, 256)))    # 进一步扭曲图像，增加训练数目
         Transform.append(T.ToTensor())       # 将图像变为张量
         Transform = T.Compose(Transform)
 
@@ -110,23 +105,13 @@ class ImageFolder(data.Dataset):
 
         return len(self.img_path)
 
-# def custom_collate(batch):
-#     # 将batch中的PIL图像对象转换为PyTorch张量
-#     transform = T.ToTensor()
-#     image_tensors = [transform(item[0]) for item in batch]
-#     GT_tensors = [transform(item[1]) for item in batch]
-#
-#     # 返回合并的张量作为batch
-#     return (image_tensors, GT_tensors)
+def get_loader(image_path, batch_size, num_workers=8, mode='train', augmentation_prob=0.4):    # 若mode='train'，则在ImageFolder中要进行图像增强
 
-def get_loader(image_path, image_size, batch_size, num_workers=2, mode='train', augmentation_prob=0.4):
-
-    dataset = ImageFolder(root=image_path, image_size=image_size, mode=mode, augmentation_prob=augmentation_prob)    # 图像被预处理及数据增强结束
+    dataset = ImageFolder(root=image_path, mode=mode, augmentation_prob=augmentation_prob)    # 图像被预处理及数据增强结束
 
     data_loader = data.DataLoader(dataset=dataset,
                                   batch_size=batch_size,
                                   sampler=None,
                                   num_workers=num_workers,
-                                  # collate_fn=custom_collate
                                   )
     return data_loader

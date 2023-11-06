@@ -1,16 +1,10 @@
 import os
-import numpy as np
-import time
-import datetime
-import torch
-import torchvision
 from torch import optim
-from torch.autograd import Variable
 import torch.nn.functional as F
 from evaluation import *
 from model import U_net
-import csv
 from torchvision import transforms as T
+from PIL import Image
 
 class Solver(object):
     def __init__(self,config, train_loader, valid_loader, test_loader):
@@ -99,7 +93,7 @@ class Solver(object):
         self.num_epochs, self.lr, self.num_epochs_decay, self.augmentation_prob))
 
         # U-Net Train
-        if os.path.isfile(unet_path):
+        if os.path.isfile(unet_path):                    # 如果已经存在该目录，则只会读取模型参数，不会进行训练。若要进行连续训练则要额外写代码
             # Load the pretrained Encoder
             self.unet.load_state_dict(torch.load(unet_path))
             print('U_net is Successfully Loaded from %s' % (unet_path))
@@ -245,55 +239,33 @@ class Solver(object):
                     print('Best U_net model score : %.4f' % (best_unet_score))
                     torch.save(best_unet, unet_path)
 
-            # ===================================== Test ====================================#
-            del self.unet
-            del best_unet
+    def test(self):
+        # ===================================== Test ====================================#
+        unet_path = os.path.join(self.model_path, 'U_net-%d-%.4f-%d-%.4f.pkl' % (
+        self.num_epochs, self.lr, self.num_epochs_decay, self.augmentation_prob))
+
+        # U-Net Train
+        if os.path.isfile(unet_path):                    # 如果已经存在该目录，则只会读取模型参数，不会进行训练。若要进行连续训练则要额外写代码
+            # Load the pretrained Encoder
+            self.unet.load_state_dict(torch.load(unet_path))
+            print('U_net is Successfully Loaded from %s' % (unet_path))
+
             self.build_model()
             self.unet.load_state_dict(torch.load(unet_path))
 
             self.unet.train(False)
             self.unet.eval()
 
-            acc = 0.  # Accuracy
-            SE = 0.  # Sensitivity (Recall)
-            SP = 0.  # Specificity
-            PC = 0.  # Precision
-            F1 = 0.  # F1 Score
-            JS = 0.  # Jaccard Similarity
-            DC = 0.  # Dice Coefficient
-            length = 0
             for i, (images, GT) in enumerate(self.test_loader):
                 images = images.to(self.device)
-                GT = GT.to(self.device)
                 SR = F.sigmoid(self.unet(images))
 
-                gray_transform = T.Grayscale(num_output_channels=1)
-                GT = gray_transform(GT)
-                width, height = SR.size(2), SR.size(3)
-                GT = torch.nn.functional.interpolate(GT, size=(width, height), mode='bilinear', align_corners=False)
+                SR = SR.squeeze(0)  # 去掉批次维度，使其变为(1, 496, 496)
+                # 将SR的数据从Tensor类型转换为Pillow的Image对象
+                SR_image = Image.fromarray((SR[0].cpu().detach().numpy() * 255).astype('uint8'))
+                save_path = os.path.join(self.result_path, 'SR_image_%d.bmp' % (i))
 
-                acc += get_accuracy(SR, GT)
-                SE += get_sensitivity(SR, GT)
-                SP += get_specificity(SR, GT)
-                PC += get_precision(SR, GT)
-                F1 += get_F1(SR, GT)
-                JS += get_JS(SR, GT)
-                DC += get_DC(SR, GT)
+                SR_image.save(save_path)
 
-                length += images.size(0)
-
-            acc = acc / length
-            SE = SE / length
-            SP = SP / length
-            PC = PC / length
-            F1 = F1 / length
-            JS = JS / length
-            DC = DC / length
-            unet_score = JS + DC
-
-            f = open(os.path.join(self.result_path, 'result.csv'), 'a', encoding='utf-8', newline='')
-            wr = csv.writer(f)
-            wr.writerow(
-                [self.model_type, acc, SE, SP, PC, F1, JS, DC, self.lr, best_epoch, self.num_epochs, self.num_epochs_decay,
-                 self.augmentation_prob])
-            f.close()
+        else:
+            print('There is no U_net')
