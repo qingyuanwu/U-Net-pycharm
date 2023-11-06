@@ -1,24 +1,95 @@
-from __future__ import division
-import numpy as np
-import pandas as pd
-import cv2
+import argparse
+import os
+from torch.backends import cudnn
+import random
+from data_loader import get_loader
+from solver import Solver
 
-'''
-数据集预处理
-'''
-# 读取数据集（CSV文件中的mask和训练数据）
-# 此时的数据结构为DataFrame，每个单元的内容是图片的地址
-csv_mask_data = pd.read_csv('D:\Repositories/U-Net/GlandsMask.csv')
-csv_image_data = pd.read_csv('D:\Repositories/U-Net/GlandsImage.csv')
+def main(config):
+    cudnn.benchmark = True   # 启动GPU
 
-# 从csv_mask_data和csv_image_data中选择所有的行和所有的列，
-# 然后将它们作为一个NumPy数组存储在mask_data和image_data变量中。
-# 此时的数据结构为ndarray，每个单元的内容是图片的地址
-mask_data = csv_mask_data.iloc[:, :].values
-image_data = csv_image_data.iloc[:, :].values
+#     创建目录
+    if not os.path.exists(config.model_path):
+        os.makedirs(config.model_path)
+    if not os.path.exists(config.result_path):
+        os.makedirs(config.result_path)
 
-# 将mask_data和image_data的内容顺序打乱，但是它们仍然是相互对应的
-perm = np.arange(len(csv_mask_data))
-np.random.shuffle(perm)
-mask_data = mask_data[perm]
-image_data = image_data[perm]
+    config.result_path = os.path.join(config.result_path, config.model_type)
+
+    if not os.path.exists(config.result_path):
+        os.makedirs(config.result_path)
+
+#     定义参数
+    lr = random.random()*0.0005+0.0000005   # 学习率
+    epoch = 300
+
+    augmentation_prob = random.random()*0.7
+    decay_ratio = random.random()*0.8
+    decay_epoch = int(epoch*decay_ratio)    # 通常用于控制学习率在训练深度学习模型时的调整策略。它表示在经过多少个训练周期（epochs）后，要减小学习率的值。
+
+    print(config)
+
+    train_loader = get_loader(image_path=config.train_path,
+                              image_size=config.image_size,
+                              batch_size=config.batch_size,
+                              num_workers=config.num_workers,
+                              mode='train',
+                              augmentation_prob=config.augmentation_prob)
+
+    valid_loader = get_loader(image_path=config.valid_path,
+                              image_size=config.image_size,
+                              batch_size=config.batch_size,
+                              num_workers=config.num_workers,
+                              mode='valid',
+                              augmentation_prob=config.augmentation_prob)
+
+    test_loader = get_loader(image_path=config.test_path,
+                              image_size=config.image_size,
+                              batch_size=config.batch_size,
+                              num_workers=config.num_workers,
+                              mode='test',
+                              augmentation_prob=config.augmentation_prob)
+
+    solver = Solver(config, train_loader, valid_loader, test_loader)
+
+    # Train and sample the images
+    if config.mode == 'train':
+        solver.train()
+    elif config.mode == 'test':
+        solver.test()
+
+
+
+if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--image_size', type=int, default=160)
+
+    parser.add_argument('--image_channels', type=int, default=3)
+    parser.add_argument('--output_channels', type=int, default=1)
+    parser.add_argument('--num_epoch', type=int, default=300)
+    parser.add_argument('--num_epoch_decay', type=int, default=250)
+    parser.add_argument('--batch_size', type=int, default=1)
+    parser.add_argument('--num_workers', type=int, default=8)
+    parser.add_argument('--lr', type=float, default=0.0002)
+    parser.add_argument('--beta1', type=float, default=0.5)
+    parser.add_argument('--beta2', type=float, default=0.999)
+    parser.add_argument('--augmentation_prob', type=float, default=0.4)
+
+    parser.add_argument('--log_step', type=int, default=2)
+    parser.add_argument('--val_step',type=int, default=2)
+
+    parser.add_argument('--mode', type=str, default='train')
+    parser.add_argument('--model_path', type=str, default='D:\Repositories/U-Net/models')
+    parser.add_argument('--model_type',type=str, default='U_net')
+    parser.add_argument('--train_path', type=str, default='D:\Repositories/U-Net/train/')
+    parser.add_argument('--valid_path', type=str, default='D:\Repositories/U-Net/valid/')
+    parser.add_argument('--test_path', type=str, default='D:\Repositories/U-Net/test/')
+    parser.add_argument('--result_path', type=str, default='D:\Repositories/U-Net/results/')
+
+    parser.add_argument('--cuda_idx', type=int, default=1)
+
+    config = parser.parse_args()
+    main(config)
+
+
