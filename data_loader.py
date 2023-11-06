@@ -46,7 +46,7 @@ class ImageFolder(data.Dataset):
 
         Transform = []                  # 用来保存图像变换的方法，用T.Compose(Transform)将所有的操作按顺序合成一个
 
-        Resize_Range = random.randint(500,520)        # 设定图像放大缩小的范围，本次训练的图像尺寸为512x512
+        Resize_Range = random.randint(500, 520)        # 设定图像放大缩小的范围，本次训练的图像尺寸为512x512
         Transform.append(T.Resize((int(Resize_Range*aspect_ratio), Resize_Range)))  # 变换图像大小，并将这个操作加在Transform最后
 
         transform_prob = random.random()     # 设置旋转等操作的发生概率
@@ -85,7 +85,6 @@ class ImageFolder(data.Dataset):
                 GT = F.vflip(GT)
 
             Transform = T.ColorJitter(brightness=0.2, contrast=0.2, hue=0.02)
-
             image = Transform(image)
 
             Transform = []
@@ -98,6 +97,7 @@ class ImageFolder(data.Dataset):
 
         Norm_ = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))     # RBG图像，所以是三个通道
         image = Norm_(image)
+        GT = Norm_(GT)
 
         return image, GT
 
