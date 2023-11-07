@@ -1,6 +1,11 @@
 import os.path
+
+import numpy as np
+import torch
 from PIL import Image
 import csv
+from matplotlib import pyplot as plt
+from torchvision import transforms as T
 
 
 model_path = 'D:\Repositories/U-Net/models'
@@ -19,11 +24,20 @@ JS = 6
 DC = 7
 result_path = 'D:\Repositories/U-Net/results/'
 
-# CSV文件地址
-csv_file = os.path.join(result_path, 'Raw_log.csv')
-with open(csv_file, mode='w', newline='') as file:
-    writer = csv.writer(file)
-    # 写入标题行
-    writer.writerow(["Epoch", "ACC", "SE", "SP", "PC", "F1", "JS", "DC"])
-    data = [epoch, ACC, SE, SP, PC, F1, JS, DC]
-    writer.writerow(data)
+Norm_ = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # RBG图像，所以是三个通道
+GT = Image.open('0.bmp')  # 读入单张图像对应的Ground Truth
+plt.imshow(GT)
+plt.axis('off')
+plt.show()
+Transform = []
+Transform.append(T.ToTensor())  # 将图像变为张量
+Transform = T.Compose(Transform)
+GT = Transform(GT)
+GT = Norm_(GT)
+
+gray_transform = T.Grayscale(num_output_channels=1)
+GT = gray_transform(GT)
+
+plt.imshow(GT[0,:,:])
+plt.axis('off')
+plt.show()

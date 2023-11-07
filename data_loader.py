@@ -97,7 +97,9 @@ class ImageFolder(data.Dataset):
 
         Norm_ = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))     # RBG图像，所以是三个通道
         image = Norm_(image)
-        GT = Norm_(GT)
+        # GT = Norm_(GT)        # 若进行GT的归一化，则会造成训练过程中loss呈负数的情况。而，optimizer只会使得loss负值越来越小，最终偏离最优解。
+                                # 因为solver.py第111行存在gray_transform = T.Grayscale(num_output_channels=1)
+                                # GT = gray_transform(GT)，这样会将GT变为-1到1
 
         return image, GT
 

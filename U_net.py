@@ -44,59 +44,58 @@ def main(config):
     # Train and sample the images
     if config.mode == 'train':
         solver.train()
+
+        # 创建Train_log.csv和Validation_log.csv文件
+        train_log_path = os.path.join(config.result_path, 'Train_log.csv')
+        validation_log_path = os.path.join(config.result_path, 'Validation_log.csv')
+
+        # 列名
+        header = ["Epoch", "ACC", "SE", "SP", "PC", "F1", "JS", "DC"]
+
+        # 写入列名到Train_log.csv
+        with open(train_log_path, 'w', newline='') as train_log_file:
+            train_log_writer = csv.writer(train_log_file)
+            train_log_writer.writerow(header)
+
+        # 写入列名到Validation_log.csv
+        with open(validation_log_path, 'w', newline='') as validation_log_file:
+            validation_log_writer = csv.writer(validation_log_file)
+            validation_log_writer.writerow(header)
+
+        # 读取Raw_log.csv
+        raw_log_path = os.path.join(config.result_path, 'Raw_log.csv')
+
+        with open(raw_log_path, 'r', newline='') as raw_log_file:
+            raw_log_reader = csv.reader(raw_log_file)
+            next(raw_log_reader)  # 跳过原始文件的标题行
+
+            for i, row in enumerate(raw_log_reader, start=1):
+                epoch, ACC, SE, SP, PC, F1, JS, DC = map(float, row)
+
+                if i % 2 == 1:
+                    # 奇数行，保存到Train_log.csv
+                    with open(train_log_path, 'a', newline='') as train_log_file:
+                        train_log_writer = csv.writer(train_log_file)
+                        train_log_writer.writerow([epoch, ACC, SE, SP, PC, F1, JS, DC])
+                else:
+                    # 偶数行，保存到Validation_log.csv
+                    with open(validation_log_path, 'a', newline='') as validation_log_file:
+                        validation_log_writer = csv.writer(validation_log_file)
+                        validation_log_writer.writerow([epoch, ACC, SE, SP, PC, F1, JS, DC])
+
     elif config.mode == 'test':
-        solver.test(250)           # 修改epoch，以调用特定轮的模型参数
-
-    # 创建Train_log.csv和Validation_log.csv文件
-    train_log_path = os.path.join(config.result_path, 'Train_log.csv')
-    validation_log_path = os.path.join(config.result_path, 'Validation_log.csv')
-
-    # 列名
-    header = ["Epoch", "ACC", "SE", "SP", "PC", "F1", "JS", "DC"]
-
-    # 写入列名到Train_log.csv
-    with open(train_log_path, 'w', newline='') as train_log_file:
-        train_log_writer = csv.writer(train_log_file)
-        train_log_writer.writerow(header)
-
-    # 写入列名到Validation_log.csv
-    with open(validation_log_path, 'w', newline='') as validation_log_file:
-        validation_log_writer = csv.writer(validation_log_file)
-        validation_log_writer.writerow(header)
-
-    # 读取Raw_log.csv
-    raw_log_path = os.path.join(config.result_path, 'Raw_log.csv')
-
-    with open(raw_log_path, 'r', newline='') as raw_log_file:
-        raw_log_reader = csv.reader(raw_log_file)
-        next(raw_log_reader)  # 跳过原始文件的标题行
-
-        for i, row in enumerate(raw_log_reader, start=1):
-            epoch, ACC, SE, SP, PC, F1, JS, DC = map(float, row)
-
-            if i % 2 == 1:
-                # 奇数行，保存到Train_log.csv
-                with open(train_log_path, 'a', newline='') as train_log_file:
-                    train_log_writer = csv.writer(train_log_file)
-                    train_log_writer.writerow([epoch, ACC, SE, SP, PC, F1, JS, DC])
-            else:
-                # 偶数行，保存到Validation_log.csv
-                with open(validation_log_path, 'a', newline='') as validation_log_file:
-                    validation_log_writer = csv.writer(validation_log_file)
-                    validation_log_writer.writerow([epoch, ACC, SE, SP, PC, F1, JS, DC])
-
-
+        solver.test(124)           # 修改epoch，以调用特定轮的模型参数
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--image_channels', type=int, default=3)
     parser.add_argument('--output_channels', type=int, default=1)
-    parser.add_argument('--num_epoch', type=int, default=100)
+    parser.add_argument('--num_epoch', type=int, default=2)
     parser.add_argument('--num_epoch_decay', type=int, default=40)  # 通常用于控制学习率在训练深度学习模型时的调整策略。它表示在经过多少个训练周期（epochs）后，要减小学习率的值。
-    parser.add_argument('--batch_size', type=int, default=1)        # 注意！如果使用data_loader.py的图像增强方法，则batch_size必须设置为1。
+    parser.add_argument('--batch_size', type=int, default=1)        # !注意!如果使用data_loader.py的图像增强方法，则batch_size必须设置为1。
                                                                     # 因为该图像增强方法中存在random.randint()，它会使得各个batch_size的维度不同而报错。
-    parser.add_argument('--num_workers', type=int, default=8)
+    parser.add_argument('--num_workers', type=int, default=12)
     parser.add_argument('--lr', type=float, default=0.0002)
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.999)

@@ -108,7 +108,7 @@ class Solver(object):
                         SR_flat = SR_probs.view(SR_probs.size(0), -1)
 
                         gray_transform = T.Grayscale(num_output_channels=1)
-                        GT = gray_transform(GT)
+                        GT = gray_transform(GT)                     # 这一步将GT从0-255三通道变为0-1的单通道
                         width, height = SR.size(2), SR.size(3)
                         GT = torch.nn.functional.interpolate(GT, size=(width, height), mode='bilinear', align_corners=False)
                         GT_flat = GT.view(GT.size(0), -1)
@@ -162,7 +162,7 @@ class Solver(object):
                         save_unet_path = os.path.join(self.model_path, 'U_net-total_epoch_%d-lr_%.4f-num_epochs_decay_%d-augmentation_prob_%.4f' % (
                                                      self.num_epochs, self.lr, self.num_epochs_decay, self.augmentation_prob))
 
-                        save_unet_path = os.path.join(save_unet_path + '-epoch_%dth.pkl' % (i))
+                        save_unet_path = os.path.join(save_unet_path + '-epoch_%dth.pkl' % (epoch))
                         torch.save(save_unet, save_unet_path)
 
                     # ===================================== Validation ====================================#
