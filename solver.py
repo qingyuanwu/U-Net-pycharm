@@ -81,7 +81,7 @@ class Solver(object):
             with open(csv_file, mode='w', newline='') as file:
                 writer = csv.writer(file)
             # 写入标题行
-                writer.writerow(["Epoch", "ACC", "SE", "SP", "PC", "F1", "JS", "DC"])
+                writer.writerow(["Epoch", "Loss", "ACC", "SE", "SP", "PC", "F1", "JS", "DC"])
                 for epoch in range(self.num_epochs):
 
                     self.unet.train(True)
@@ -139,7 +139,7 @@ class Solver(object):
                     DC = DC / length
 
                     # 将指标数据写入 CSV 文件
-                    data = [epoch, ACC, SE, SP, PC, F1, JS, DC]
+                    data = [epoch+1, epoch_loss, ACC, SE, SP, PC, F1, JS, DC]
                     writer.writerow(data)
 
                     # Print the log info
@@ -162,7 +162,7 @@ class Solver(object):
                         save_unet_path = os.path.join(self.model_path, 'U_net-total_epoch_%d-lr_%.4f-num_epochs_decay_%d-augmentation_prob_%.4f' % (
                                                      self.num_epochs, self.lr, self.num_epochs_decay, self.augmentation_prob))
 
-                        save_unet_path = os.path.join(save_unet_path + '-epoch_%dth.pkl' % (epoch))
+                        save_unet_path = os.path.join(save_unet_path + '-epoch_%dth.pkl' % (epoch+1))
                         torch.save(save_unet, save_unet_path)
 
                     # ===================================== Validation ====================================#
@@ -207,7 +207,7 @@ class Solver(object):
                     DC = DC / length
 
                     # 将指标数据写入 CSV 文件
-                    data = [epoch, ACC, SE, SP, PC, F1, JS, DC]
+                    data = [epoch, 0, ACC, SE, SP, PC, F1, JS, DC]
                     writer.writerow(data)
 
                     print('[Validation]\n Average Accuracy: %.4f, Sensitivity: %.4f, Specificity: %.4f, '
@@ -250,10 +250,10 @@ class Solver(object):
         # U-Net Train
         if os.path.isfile(unet_path):                    # 如果已经存在该目录，则只会读取模型参数，不会进行训练。若要进行连续训练则要额外写代码
             # Load the pretrained Encoder
+            self.build_model()                           # build_model()一定要在load之前
             self.unet.load_state_dict(torch.load(unet_path))
             print('U_net is Successfully Loaded from %s' % (unet_path))
 
-            self.build_model()
             self.unet.train(False)
             self.unet.eval()
 
