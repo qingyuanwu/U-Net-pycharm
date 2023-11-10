@@ -50,7 +50,7 @@ def main(config):
         validation_log_path = os.path.join(config.result_path, 'Validation_log.csv')
 
         # 列名
-        header = ["Epoch", "ACC", "SE", "SP", "PC", "F1", "JS", "DC"]
+        header = ["Epoch","Loss", "ACC", "SE", "SP", "PC", "F1", "JS", "DC"]
 
         # 写入列名到Train_log.csv
         with open(train_log_path, 'w', newline='') as train_log_file:
@@ -84,15 +84,15 @@ def main(config):
                         validation_log_writer.writerow([epoch, ACC, SE, SP, PC, F1, JS, DC])
 
     elif config.mode == 'test':
-        solver.test(99)           # 修改epoch，以调用特定轮的模型参数
+        solver.test(250)           # 修改epoch，以调用特定轮的模型参数
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--image_channels', type=int, default=3)
     parser.add_argument('--output_channels', type=int, default=1)
-    parser.add_argument('--num_epoch', type=int, default=100)
-    parser.add_argument('--num_epoch_decay', type=int, default=40)  # 通常用于控制学习率在训练深度学习模型时的调整策略。它表示在经过多少个训练周期（epochs）后，要减小学习率的值。
+    parser.add_argument('--num_epoch', type=int, default=300)
+    parser.add_argument('--num_epoch_decay', type=int, default=250)  # 通常用于控制学习率在训练深度学习模型时的调整策略。它表示在经过多少个训练周期（epochs）后，要减小学习率的值。
     parser.add_argument('--batch_size', type=int, default=1)        # !注意!如果使用data_loader.py的图像增强方法，则batch_size必须设置为1。
                                                                     # 因为该图像增强方法中存在random.randint()，它会使得各个batch_size的维度不同而报错。
     parser.add_argument('--num_workers', type=int, default=8)
